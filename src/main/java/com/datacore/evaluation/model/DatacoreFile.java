@@ -1,5 +1,7 @@
 package com.datacore.evaluation.model;
 
+import java.io.Serializable;
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -8,8 +10,13 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "DATACORE_FILE")
-public class DatacoreFile {
+public class DatacoreFile implements Serializable {
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -7011140608775812707L;
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private long id;

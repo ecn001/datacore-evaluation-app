@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.RandomStringUtils;
@@ -14,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.datacore.evaluation.model.DatacoreFile;
@@ -31,19 +33,29 @@ public class FileServiceImpl implements FileService {
 	private DatacoreFileRepository datacoreFileRepository;
 	
 	@Override
-	public void createFiles() {
-		for(int i = 1; i <= 100; i++) {
+	@Async("threadPoolTaskExecutor")
+	public CompletableFuture<List<DatacoreFile>> createFiles(int begin, int end) {
+		List<DatacoreFile> createdFiles = new ArrayList<>();
+		
+		for(int i = begin; i <= end; i++) {
 			DatacoreFile datacoreFile = new DatacoreFile(RandomStringUtils.randomAlphanumeric(8) + ".txt", currentDateTime());
-			datacoreFileRepository.save(datacoreFile);
+			createdFiles.add(datacoreFile);
 			
 			try {
+				//salva o arquivo no diretorio de destino
 				Files.write(Paths.get(outputDirectory + datacoreFile.getFileName()), datacoreFile.getFileContent().getBytes());
 			} catch (IOException e) {
-				e.printStackTrace();
+				LOGGER.error(e.getMessage());
 			}
-			
+
+			datacoreFileRepository.save(datacoreFile);
+			LOGGER.debug("Criado arquivo ---- Id: {} --- File Name: {} --- File Content: {}", datacoreFile.getId(), datacoreFile.getFileName(), datacoreFile.getFileContent());
 		}
+		
+		return CompletableFuture.completedFuture(createdFiles);
+			
 	}
+	
 	
 	@Override
 	public void checkEvenIdFiles() {
